@@ -6,7 +6,7 @@ import time
 from typing import List
 
 
-class Story():
+class Story(object):
     story_paragraphs:List[str] = []
     limit_req_free_plan_per_minute:int = 3
     delay_free_plan:int = 60
