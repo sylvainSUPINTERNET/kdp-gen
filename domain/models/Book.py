@@ -2,6 +2,8 @@ from typing import List
 import ebooklib
 from ebooklib import epub
 import uuid
+import epubcheck
+
 class Book(object):
 
     def __init__( self, book: epub.EpubBook, author:str, title:str, generated_content:List[str], language:str = "fr"):
@@ -46,7 +48,7 @@ class Book(object):
             self.book.spine.append(chapter)
          
         # Navigation
-        self.book.add_item(epub.EpubNcx())
+        self.book.add_item(epub.EpubNcx())  
         self.book.add_item(epub.EpubNav())
     
         return self
@@ -57,15 +59,20 @@ class Book(object):
         page = epub.EpubHtml(title="te", file_name=f'{"te"}.xhtml', lang='en')
         
         # Add image to EPUB book
-        epub_image = epub.EpubItem(uid=f'{"te"}-image', file_name=f'{"img"}.png', media_type='image/png', content=open("./img.png", 'rb').read())
-        self.book.add_item(epub_image)
+        # epub_image = epub.EpubItem(uid=f'{"te"}-image', file_name=f'{"img"}.png', media_type='image/png', content=open("./img.png", 'rb').read())
+        epub_image_bg = epub.EpubItem(uid=f'{"te"}-image2', file_name=f'{"img"}.jpg', media_type='image/jpeg', content=open("./img.jpg", 'rb').read())
+        # self.book.add_item(epub_image)
+        self.book.add_item(epub_image_bg)
         
-        css_item = epub.EpubItem(uid="style.css", file_name="style.css", media_type="text/css", content="p { color: red; }")
+        css_item = epub.EpubItem(uid="style.css", file_name="style.css", media_type="text/css", content="html  { background-image: url('./img.jpg'); background-size: cover;background-repeat: no-repeat; }")
         self.book.add_item(css_item)
         page.add_link(href="style.css", rel="stylesheet", type="text/css")
 
         # Add image and text to HTML page
-        page.content = f'<div style="text-align:center"><img src="{epub_image.file_name}" alt="{"pn"}"/><p>{"caption"}</p></div>'
+        # page.content = f'<div style="text-align:center"><img src="{epub_image.file_name}" alt="{"pn"}"/><p>{"caption"}</p></div>'
+        page.content = f'<div style=""><p>heaaaa</p></div>'
+        
+        
         self.book.add_item(page)
         
         self.book.toc.append(epub.Link(page.file_name, "Cover Page", "Cover"))
