@@ -2,7 +2,11 @@ from typing import List
 import ebooklib
 from ebooklib import epub
 import uuid
-import epubcheck
+import os
+
+import requests
+from PIL import Image
+from io import BytesIO
 
 class Book(object):
 
@@ -23,26 +27,74 @@ class Book(object):
         self.book.add_author(self.author)
         
         return self
-
     
-    def add_chapter(self):
+    def generate_illustration(self, paragraph:str, idx:int) -> Image:
+        
+        
+        
+        try:
+            url_dalle = "https://api.openai.com/v1/images/generations"
+            num_result = 1
+            size = "512x512" # '256x256', '512x512', '1024x1024'
+            
+            body = {
+                "prompt": f"{paragraph}",
+                "n": num_result,
+                "size": size
+            }
+            headers = {
+                'Content-Type': 'application/json',
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"
+            }
+            resp = requests.post(url=url_dalle, json=body, headers=headers)
+            
+            if resp.status_code == requests.codes.ok:
+                resp_data = resp.json()
+                b_img_resp = requests.get(resp_data["data"][0]["url"])
+                img = Image.open(BytesIO(b_img_resp.content))
+                
+                img.save(f"./img_generation/img-{idx}.jpeg")
+                
+                
+                epub_image_bg = epub.EpubItem(uid=f'img-illustration-{idx}', file_name=f'./img_generation/img-{idx}.jpeg', media_type='image/jpeg', content=open(f"./img_generation/img-{idx}.jpeg", 'rb').read())
+                self.book.add_item(epub_image_bg)
+                
+                return self
+            else:
+                print("error")
+                print(resp.json())
+                
+        except Exception as e:
+            print(e)
+        
+        
+
+
+    def add_chapter(self, with_toc:bool = True):
         
         self.book.spine.append("nav")
         
         for idx, c in enumerate(self.generated_content):
             chapter = epub.EpubHtml(title=f"{str(uuid.uuid4())}", file_name=f"chap{idx+1}.xhtml", lang=self.language)
+            
+            self.generate_illustration(c, idx=idx)
+            
+            # Create the text and image elements
+            content_template = f'<div><div style="display:flex;justify-content:center;"><h1>{c}</h1></div><div style="display:flex;justify-content:center;margin-top:2em;"><img src="./img_generation/img-{idx}.jpeg" style="text-align:center"></img></div></div>'            
+            
             chapter.content = (
-                f"<p>{c}</p>"
+                f"{content_template}"
             )
             self.book.add_item(chapter)
             
             # Update TOC
-            self.book.toc.append(
-                epub.Link(f"chap{idx+1}.xhtml", f"Chapter {idx+1}", f"chap{idx+1}"),
-            )
-            self.book.toc.append(
-                (epub.Section("Subchapter 1"), (epub.Link(f"chap{idx+1}.xhtml", f"Subchapter 1", f"chap{idx+1}"),))
-            )
+            if with_toc is True:
+                self.book.toc.append(
+                    epub.Link(f"chap{idx+1}.xhtml", f"Chapter {idx+1}", f"chap{idx+1}"),
+                )
+                self.book.toc.append(
+                    (epub.Section("Subchapter 1"), (epub.Link(f"chap{idx+1}.xhtml", f"Subchapter 1", f"chap{idx+1}"),))
+                )
             
             
             self.book.spine.append(chapter)
@@ -54,7 +106,7 @@ class Book(object):
         return self
     
     
-    def add_page_cover(self):
+    def add_page_cover(self, with_toc:bool = True):
         # Create new HTML page
         page = epub.EpubHtml(title="te", file_name=f'{"te"}.xhtml', lang='en')
         
@@ -75,7 +127,8 @@ class Book(object):
         
         self.book.add_item(page)
         
-        self.book.toc.append(epub.Link(page.file_name, "Cover Page", "Cover"))
+        if with_toc is True:
+            self.book.toc.append(epub.Link(page.file_name, "XD", "XD1"))
 
         
         # Add page to book spine
