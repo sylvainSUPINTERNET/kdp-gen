@@ -16,8 +16,9 @@ def chat_GPT_complete( msg:str, role:str) -> str:
     :return: The completed message
     :rtype: str
     """
+    # Max token for prompt DALLE-2
     
-    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{msg}"}])
+    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{msg}"}], max_tokens=2048)
     return completion.choices[0].message.content
 
 

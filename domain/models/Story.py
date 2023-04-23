@@ -27,6 +27,7 @@ class Story(object):
         if len(self.story_paragraphs) == 0:
             
             paragraph:str = chat_GPT_complete(self.prologue, "user")
+
             self.story_paragraphs.append(paragraph)
             return self
         
@@ -42,7 +43,6 @@ class Story(object):
             prologue:str = f"Continue this story {self.story_paragraphs[-1]}"
             
         paragraph:str = chat_GPT_complete(prologue, role)
-        
         self.story_paragraphs.append(paragraph)
         
         return self
@@ -53,24 +53,6 @@ class Story(object):
 
         Returns:
             list[str]: story as array of string ( contains /r /n and so on, so trim is required )
-        """
-        
-        self.generate_epub()
-        
+        """        
         return self.story_paragraphs
-    
-    
-    
-    def generate_image(self, type:str="illustration"):
-        """TODO : Generate Image for illustration and cover
-
-        Args:
-            type (str, optional): type of image to generate for the story. Defaults to "illustration".
-        """
-        pass
-    
-    
-    def generate_epub(self):
-        """ TODO: Generate epub file """
-        pass
     
