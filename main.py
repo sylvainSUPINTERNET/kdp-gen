@@ -16,7 +16,9 @@ async def root():
 
 if __name__ == "__main__":
     
-    story = Story(prologue="Une histoire pour enfant qui se passe dans un chateau", plan="free").add_paragraph_step("Give suspens").add_paragraph_step("Give suspens").add_paragraph_step("Give suspens").add_paragraph_step("Prepare to the end").add_paragraph_step("Give conclusion").get_story()
+    # story = Story(prologue="Ecris une histoire pour les enfants sur les 4 cavaliers de l'apocalypse", plan="free").add_paragraph_step("Give suspens").add_paragraph_step("Prepare to the end").add_paragraph_step("Give conclusion").get_story()
+    story = Story(prologue="Ecris une histoire pour les enfants sur les 4 cavaliers de l'apocalypse", plan="free").add_paragraph_step("Give suspens").get_story()
+
     print(story)
     # b_gen = Book(epub.EpubBook(), "Jean", "My title", generated_content=["story"], language="fr").add_metadata().add_chapter(with_toc=False).add_page_cover(with_toc=False).write_book()
     b_gen = Book(epub.EpubBook(), "Jean", "My title", generated_content=story, language="fr").add_metadata().add_chapter(with_toc=False).add_page_cover(with_toc=False).write_book()

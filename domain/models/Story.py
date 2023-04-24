@@ -32,6 +32,7 @@ class Story(object):
             return self
         
         if self.plan == "free":
+            # TODO => ici bug une fois qu'on a dépassé la limite en fait ça va le faire tout le temps donc il faut implémenter un count annexe
             if (len(self.story_paragraphs) % self.limit_req_free_plan_per_minute) == 0:
                 print("Limit of free plan reached waiting for 1 minute for next generation...")
                 time.sleep(self.delay_free_plan)

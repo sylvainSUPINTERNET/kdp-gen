@@ -35,7 +35,7 @@ class Book(object):
         try:
             url_dalle = "https://api.openai.com/v1/images/generations"
             num_result = 1
-            size = "512x512" # '256x256', '512x512', '1024x1024'
+            size = "256x256" # '256x256', '512x512', '1024x1024'
             
             body = {
                 "prompt": f"{paragraph}",
@@ -79,12 +79,17 @@ class Book(object):
             
             self.generate_illustration(c, idx=idx)
             
-            # Create the text and image elements
-            content_template = f'<div><div style="display:flex;justify-content:center;"><h1>{c}</h1></div><div style="display:flex;justify-content:center;margin-top:2em;"><img src="./img_generation/img-{idx}.jpeg" style="text-align:center"></img></div></div>'            
+            c = c.replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
             
+            # Create the text and image elements
+            content_template = f'<div><div style="display:flex;justify-content:center;"><p style="text-align:justify">{c}</p></div><div style="display:flex;justify-content:center;"><img src="./img_generation/img-{idx}.jpeg" style="flex:1; margin:auto;"></img></div></div>'            
             chapter.content = (
                 f"{content_template}"
             )
+            
+            with open('./infrastructure/templates/page_template.html', 'r') as file:
+                template = file.read()
+            
             self.book.add_item(chapter)
             
             # Update TOC
