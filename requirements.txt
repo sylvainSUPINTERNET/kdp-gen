@@ -5,3 +5,5 @@ Pillow==9.5.0
 uvicorn==0.21.1
 EbookLib==0.18
 epubcheck==4.2.6
+Mako==1.2.4
+spacy==3.5.2

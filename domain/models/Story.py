@@ -1,7 +1,6 @@
 
 
 from infrastructure.OpenAiConfiguration import chat_GPT_complete
-import datetime
 import time
 from typing import List
 

@@ -1,6 +1,7 @@
 import openai
 import os
 
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
@@ -17,8 +18,8 @@ def chat_GPT_complete( msg:str, role:str) -> str:
     :rtype: str
     """
     # Max token for prompt DALLE-2
-    token_max_prompt = 242
-    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{msg}"}], max_tokens=token_max_prompt)
+        
+    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{msg}"}])
     return completion.choices[0].message.content
 
 

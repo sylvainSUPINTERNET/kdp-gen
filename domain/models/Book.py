@@ -7,6 +7,10 @@ import os
 import requests
 from PIL import Image
 from io import BytesIO
+import spacy
+
+from mako.template import Template
+
 
 class Book(object):
 
@@ -30,15 +34,18 @@ class Book(object):
     
     def generate_illustration(self, paragraph:str, idx:int) -> Image:
         
-        
-        
         try:
+            nlp = spacy.load('fr_core_news_sm')
+            noun_chunks = []
+            for chunk in nlp(paragraph).noun_chunks:
+                noun_chunks.append(chunk.text)
+
             url_dalle = "https://api.openai.com/v1/images/generations"
             num_result = 1
             size = "256x256" # '256x256', '512x512', '1024x1024'
             
             body = {
-                "prompt": f"{paragraph}",
+                "prompt": f"{''.join(noun_chunks)}",
                 "n": num_result,
                 "size": size
             }
@@ -79,16 +86,25 @@ class Book(object):
             
             self.generate_illustration(c, idx=idx)
             
-            c = c.replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            c = c.replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")  
+
+            data = {
+                "text":f"{c}",
+                "illustration_path":f"./img_generation/img-{idx}.jpeg"
+            }
             
-            # Create the text and image elements
-            content_template = f'<div><div style="display:flex;justify-content:center;"><p style="text-align:justify">{c}</p></div><div style="display:flex;justify-content:center;"><img src="./img_generation/img-{idx}.jpeg" style="flex:1; margin:auto;"></img></div></div>'            
-            chapter.content = (
-                f"{content_template}"
-            )
+            template_path = os.path.abspath('page_template.html')
+            with open(template_path, 'r') as f:
+                template_str = f.read()
+
+            # Create a Mako template object
+            template = Template(template_str)
+
+            # Render the data in the template and print the resulting HTML
+            html_output = template.render(**data)
             
-            with open('./infrastructure/templates/page_template.html', 'r') as file:
-                template = file.read()
+            
+            chapter.content = html_output
             
             self.book.add_item(chapter)
             
@@ -110,36 +126,6 @@ class Book(object):
     
         return self
     
-    
-    def add_page_cover(self, with_toc:bool = True):
-        # Create new HTML page
-        page = epub.EpubHtml(title="te", file_name=f'{"te"}.xhtml', lang='en')
-        
-        # Add image to EPUB book
-        # epub_image = epub.EpubItem(uid=f'{"te"}-image', file_name=f'{"img"}.png', media_type='image/png', content=open("./img.png", 'rb').read())
-        epub_image_bg = epub.EpubItem(uid=f'{"te"}-image2', file_name=f'{"img"}.jpg', media_type='image/jpeg', content=open("./img.jpg", 'rb').read())
-        # self.book.add_item(epub_image)
-        self.book.add_item(epub_image_bg)
-        
-        css_item = epub.EpubItem(uid="style.css", file_name="style.css", media_type="text/css", content="html  { background-image: url('./img.jpg'); background-size: cover;background-repeat: no-repeat; }")
-        self.book.add_item(css_item)
-        page.add_link(href="style.css", rel="stylesheet", type="text/css")
-
-        # Add image and text to HTML page
-        # page.content = f'<div style="text-align:center"><img src="{epub_image.file_name}" alt="{"pn"}"/><p>{"caption"}</p></div>'
-        page.content = f'<div style=""><p>heaaaa</p></div>'
-        
-        
-        self.book.add_item(page)
-        
-        if with_toc is True:
-            self.book.toc.append(epub.Link(page.file_name, "XD", "XD1"))
-
-        
-        # Add page to book spine
-        self.book.spine.append(page)
-        
-        return self
     
     def write_book(self):
         # write to the file
