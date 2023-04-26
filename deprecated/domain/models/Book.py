@@ -45,7 +45,7 @@ class Book(object):
             size = "256x256" # '256x256', '512x512', '1024x1024'
             
             body = {
-                "prompt": f"{''.join(noun_chunks)}",
+                "prompt": f"{' '.join(noun_chunks)}",
                 "n": num_result,
                 "size": size
             }
