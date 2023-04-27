@@ -19,6 +19,9 @@ PROMPT_BOOK_CONTENT_CHAPTER="Ecris une histoire pour le titre : "
 PROMPT_STORY_CONTINUE="Continue l'histoire : "
 PROMPT_STORY_END="Conclue l'histoire : "
 
+# To generate prompt with just few character ( for dalle 2)
+PROMPT_SMALL_PROMPT_ILLUSTRATION="Ecris un mini résumé pour ( optimisé pour dalle 2 prompt ) : "
+
 
 def free_plan_wait_limit(count_req:int, plan:str="free", free_plan_max_req_per_min:int=3):
     print(count_req)
@@ -28,36 +31,37 @@ def free_plan_wait_limit(count_req:int, plan:str="free", free_plan_max_req_per_m
             time.sleep(61)
 
 def get_book_title(theme:str, count_req_call:int, role:str="user", plan:str="free", free_plan_max_req_per_min:int=3)->str:
-    print("CALL 1")
     free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
 
-    # Call chatGPT with theme to get title
     prompt:str=f"{PROMPT_BOOK_TITLE} {theme}"
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
 def get_chapter_title(theme:str, count_req_call:int, role:str="user", plan:str="free", free_plan_max_req_per_min:int=3) -> str:
-    print("CALL 2")
     free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
 
-    # Call chatGPT with theme to get title
     prompt:str=f"{PROMPT_BOOK_TITLE_CHAPTER} {theme}"
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
 def get_chapter_content(chapter_title:str,count_req_call:int,role:str="user", context_prompt:str=PROMPT_BOOK_CONTENT_CHAPTER, plan:str="free", free_plan_max_req_per_min:int=3) -> str:
-    print("CALL 3")
     free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
 
-    # Call chatGPT with theme to get title
     prompt:str=f"{context_prompt} {chapter_title}"
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
 
-def get_illustration_path(paragraph:str, idx:int , count_req_call:int, plan:str="free", free_plan_max_req_per_min:int=3):
-    print("CALL 4")
+def get_illustration_path(paragraph:str, idx:int , count_req_call:int, plan:str="free", free_plan_max_req_per_min:int=3, role:str="user"):
     free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
+
+    prompt:str=f"{PROMPT_SMALL_PROMPT_ILLUSTRATION} {paragraph}"
+    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
+    
+    illustration_prompt = completion.choices[0].message.content
+    
+    print("Illustration prompt : ")
+    print(illustration_prompt)
 
     try:
         url_dalle = "https://api.openai.com/v1/images/generations"
@@ -65,14 +69,16 @@ def get_illustration_path(paragraph:str, idx:int , count_req_call:int, plan:str=
         size = "512x512" # '256x256', '512x512', '1024x1024'
         
         body = {
-            "prompt": f"{paragraph}",
+            "prompt": f"{illustration_prompt}",
             "n": num_result,
             "size": size
         }
+        
         headers = {
             'Content-Type': 'application/json',
             "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"
         }
+        
         resp = requests.post(url=url_dalle, json=body, headers=headers)
         
         if resp.status_code == requests.codes.ok:
@@ -154,10 +160,10 @@ if __name__ == '__main__':
             chapter_content:str = get_chapter_content(chapter_title=chapter_title, count_req_call=count_req_call, context_prompt=PROMPT_STORY_CONTINUE).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
             count_req_call += 1
 
-        # TODO => find a way to reduce number of token in chapter_content variable for the dalle 2 call and get relevant picture
-        # => For illustration we using dalle2 don't need to increment count_req_all
-        img, img_file_path = get_illustration_path(paragraph="chapter_content", idx=i, count_req_call=count_req_call)
-
+        print("Add illustration ...")
+        img, img_file_path = get_illustration_path(paragraph=chapter_content, idx=i, count_req_call=count_req_call)
+        count_req_call += 1
+        
         # render the template with your variablesx
         html = template.render(text=chapter_content, illustration_path=img_file_path)
     
