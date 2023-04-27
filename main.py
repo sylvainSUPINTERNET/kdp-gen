@@ -111,7 +111,7 @@ def get_illustration_path(paragraph:str, idx:int , count_req_call:int, plan:str=
 if __name__ == '__main__':
 
     # Global Parameters
-    theme="Les requins blancs de la méditerranée"
+    theme="La franc maçonnerie en France au 18ème siècle"
     plan = "free"
     free_plan_max_req_per_min = 3
     nb_page = 3
