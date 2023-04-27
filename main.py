@@ -16,8 +16,8 @@ PROMPT_BOOK_TITLE="Donne un titre de livre pour le thème : "
 PROMPT_BOOK_TITLE_CHAPTER="Un titre de chapitre pour thème : "
 PROMPT_BOOK_CONTENT_CHAPTER="Ecris une histoire pour le titre : "
 
-PROMPT_STORY="Continue l'histoire : "
-PROMPT_STORY="Conclue l'histoire : "
+PROMPT_STORY_CONTINUE="Continue l'histoire : "
+PROMPT_STORY_END="Conclue l'histoire : "
 
 
 def get_book_title(theme:str, role:str="user")->str:
@@ -32,9 +32,9 @@ def get_chapter_title(theme:str, role:str="user") -> str:
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
-def get_chapter_content(chapter_title:str, role:str="user") -> str:
+def get_chapter_content(chapter_title:str, role:str="user", context_prompt:str=PROMPT_BOOK_CONTENT_CHAPTER) -> str:
     # Call chatGPT with theme to get title
-    prompt:str=f"{PROMPT_BOOK_CONTENT_CHAPTER} {chapter_title}"
+    prompt:str=f"{context_prompt} {chapter_title}"
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
@@ -115,14 +115,23 @@ if __name__ == '__main__':
 
 
         if plan in "free":
-            if i % free_plan_max_req_per_min == 0:
+            if i % free_plan_max_req_per_min == 0 and i != 0:
                 print("Waiting 1 min to avoid reaching free plan limit ( free plan limitation )")
                 time.sleep(60)
 
         chapter_title:str = get_chapter_title(theme=theme)
-        chapter_content:str = get_chapter_content(chapter_title=chapter_title).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
 
+        if i == 0:
+            print("Starting writing story")
+            chapter_content:str = get_chapter_content(chapter_title=chapter_title).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+        elif i == nb_page - 1:
+            print("Writing the end of the story")
+            chapter_content:str = get_chapter_content(chapter_title=chapter_title, context_prompt=PROMPT_STORY_END).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+        else:
+            print("Writing the story ...")
+            chapter_content:str = get_chapter_content(chapter_title=chapter_title, context_prompt=PROMPT_STORY_CONTINUE).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
 
+        # TODO => find a way to reduce number of token in chapter_content variable for the dalle 2 call and get relevant picture
         img, img_file_path = get_illustration_path(paragraph="chapter_content", idx=i)
         # render the template with your variablesx
         html = template.render(text=chapter_content, illustration_path=img_file_path)
