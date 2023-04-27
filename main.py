@@ -20,26 +20,45 @@ PROMPT_STORY_CONTINUE="Continue l'histoire : "
 PROMPT_STORY_END="Conclue l'histoire : "
 
 
-def get_book_title(theme:str, role:str="user")->str:
+def free_plan_wait_limit(count_req:int, plan:str="free", free_plan_max_req_per_min:int=3):
+    print(count_req)
+    if plan in "free":
+        if count_req % (free_plan_max_req_per_min) == 0 and count_req != 0:
+            print("Waiting 1 min to avoid reaching free plan limit ( free plan limitation )")
+            time.sleep(61)
+
+def get_book_title(theme:str, count_req_call:int, role:str="user", plan:str="free", free_plan_max_req_per_min:int=3)->str:
+    print("CALL 1")
+    free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
+
     # Call chatGPT with theme to get title
     prompt:str=f"{PROMPT_BOOK_TITLE} {theme}"
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
-def get_chapter_title(theme:str, role:str="user") -> str:
+def get_chapter_title(theme:str, count_req_call:int, role:str="user", plan:str="free", free_plan_max_req_per_min:int=3) -> str:
+    print("CALL 2")
+    free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
+
     # Call chatGPT with theme to get title
     prompt:str=f"{PROMPT_BOOK_TITLE_CHAPTER} {theme}"
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
-def get_chapter_content(chapter_title:str, role:str="user", context_prompt:str=PROMPT_BOOK_CONTENT_CHAPTER) -> str:
+def get_chapter_content(chapter_title:str,count_req_call:int,role:str="user", context_prompt:str=PROMPT_BOOK_CONTENT_CHAPTER, plan:str="free", free_plan_max_req_per_min:int=3) -> str:
+    print("CALL 3")
+    free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
+
     # Call chatGPT with theme to get title
     prompt:str=f"{context_prompt} {chapter_title}"
     completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": f"{role}", "content": f"{prompt}"}])
     return completion.choices[0].message.content
 
 
-def get_illustration_path(paragraph:str, idx:int):
+def get_illustration_path(paragraph:str, idx:int , count_req_call:int, plan:str="free", free_plan_max_req_per_min:int=3):
+    print("CALL 4")
+    free_plan_wait_limit(count_req_call, plan=plan, free_plan_max_req_per_min=free_plan_max_req_per_min)
+
     try:
         url_dalle = "https://api.openai.com/v1/images/generations"
         num_result = 1
@@ -92,8 +111,12 @@ if __name__ == '__main__':
     nb_page = 3
     epub_file_name = "MyEbook.epub"
 
+    count_req_call:int = 0
+
     book = epub.EpubBook()
-    book_title:str = get_book_title(theme=theme)
+    book_title:str = get_book_title(theme=theme, count_req_call=count_req_call)
+    count_req_call += 1
+
     # set metadata
     book.set_identifier(str(uuid.uuid4()))
     book.set_title(book_title)
@@ -113,26 +136,28 @@ if __name__ == '__main__':
     spine = ["nav"]
     for i in range(nb_page):
 
-
-        if plan in "free":
-            if i % free_plan_max_req_per_min == 0 and i != 0:
-                print("Waiting 1 min to avoid reaching free plan limit ( free plan limitation )")
-                time.sleep(60)
-
-        chapter_title:str = get_chapter_title(theme=theme)
+        
+        chapter_title:str = get_chapter_title(theme=theme, count_req_call=count_req_call)
+        count_req_call += 1
 
         if i == 0:
             print("Starting writing story")
-            chapter_content:str = get_chapter_content(chapter_title=chapter_title).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            chapter_content:str = get_chapter_content(chapter_title=chapter_title, count_req_call=count_req_call).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            count_req_call += 1
+
         elif i == nb_page - 1:
             print("Writing the end of the story")
-            chapter_content:str = get_chapter_content(chapter_title=chapter_title, context_prompt=PROMPT_STORY_END).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            chapter_content:str = get_chapter_content(chapter_title=chapter_title, count_req_call=count_req_call, context_prompt=PROMPT_STORY_END).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            count_req_call += 1
         else:
             print("Writing the story ...")
-            chapter_content:str = get_chapter_content(chapter_title=chapter_title, context_prompt=PROMPT_STORY_CONTINUE).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            chapter_content:str = get_chapter_content(chapter_title=chapter_title, count_req_call=count_req_call, context_prompt=PROMPT_STORY_CONTINUE).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            count_req_call += 1
 
         # TODO => find a way to reduce number of token in chapter_content variable for the dalle 2 call and get relevant picture
-        img, img_file_path = get_illustration_path(paragraph="chapter_content", idx=i)
+        # => For illustration we using dalle2 don't need to increment count_req_all
+        img, img_file_path = get_illustration_path(paragraph="chapter_content", idx=i, count_req_call=count_req_call)
+
         # render the template with your variablesx
         html = template.render(text=chapter_content, illustration_path=img_file_path)
     
