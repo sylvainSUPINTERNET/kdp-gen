@@ -1,3 +1,4 @@
+import time
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -87,7 +88,9 @@ if __name__ == '__main__':
     # Global Parameters
     theme="Les requins blancs de la méditerranée"
     plan = "free"
-    nb_page = 1
+    free_plan_max_req_per_min = 3
+    nb_page = 3
+    epub_file_name = "MyEbook.epub"
 
     book = epub.EpubBook()
     book_title:str = get_book_title(theme=theme)
@@ -109,6 +112,12 @@ if __name__ == '__main__':
 
     spine = ["nav"]
     for i in range(nb_page):
+
+
+        if plan in "free":
+            if i % free_plan_max_req_per_min == 0:
+                print("Waiting 1 min to avoid reaching free plan limit ( free plan limitation )")
+                time.sleep(60)
 
         chapter_title:str = get_chapter_title(theme=theme)
         chapter_content:str = get_chapter_content(chapter_title=chapter_title).replace("\n", "<br/>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
@@ -149,5 +158,6 @@ if __name__ == '__main__':
     book.spine = spine
 
     # write to the file
-    epub.write_epub("MyBook.epub", book, {})
+    epub.write_epub(f"{epub_file_name}", book, {})
+    print(f"Book generated with success : {epub_file_name}")
 
